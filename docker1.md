@@ -1,6 +1,6 @@
-# First Docker Example
+# Creating a simple website with Linux, Docker, and flask
 
-## Install and Login
+## Install Docker and Login to Docker Hub
 
 * Install docker on your computer or on a Linux VM
 * Create a Login at Docker Hub
@@ -322,7 +322,7 @@ Don't forget the dot at the end ... what is it good for?
 
 Now we can start the container (with Port-Forwarding) ... 
 ```bash
-docker run -d -p 80:80 rbn-server
+docker run -d -p 82:80 sit-server
 ```
 The argument "-d" is for "detached mode" meaning that the container will run in the background. "-p 80:80" forwards the containers port to the hosts port. 
 
@@ -333,12 +333,10 @@ Now lets see the result ...
 
 ## Second Dockerfile - Create a simple REST Service with Java (JSON, Java, Maven, Spring Boot)
 
-Um mit Java einen Rest Service to bauen und diesen per Spring zu deployen, sind folgende Schritte notwendig:
-* Das Jar-File muss erstellt werden (mit Java, Spring Boot und Maven), folgen Sie hier bitte dem Tutorial https://spring.io/guides/gs/rest-service/
-* Das Jar-File muss per Docker deployt werden
-* Der REST-Service sollte getestet werden, folgen Sie hierzu wieder dem Tutorial
+* For the following we need a backend REST Service ... and here is a tutorial to create a Java Rest Service with Java, Spring Boot and Maven: https://spring.io/guides/gs/rest-service/
+* The Jar-File can be deployed in a docker-container
 
-Hier ist das Dockerfile:
+Here the Dockerfile:
 ```bash
 FROM openjdk:17-jdk-slim
 WORKDIR /app
@@ -346,8 +344,94 @@ COPY rest-service-complete-0.0.1-SNAPSHOT.jar /app
 EXPOSE 8080
 CMD ["java", "-jar", "rest-service-complete-0.0.1-SNAPSHOT.jar"]
 ```
+Build it:
 
-Sollte es Ihnen nicht gelingen, das JAR innerhalb der Übung selbst zu bauen, so können Sie es auch aus dem Git-Repo hier entnehmen. Übrigens können Sie alles hier auch selbst herunter laden per
 ```bash
-git clone https://github.com/transpol/rbn.git
+docker build -t sit-rest .
 ```
+
+Run it:
+
+```bash
+docker run -d -p 8080:8080 sit-rest
+```
+
+docker run -d -p 8080:8080 sit-rest
+
+The above mentioned JAR is provided in this Git-Repo ...
+
+## Create Flask-App (Python-based, Docker-Projekt)
+
+Legen Sie ein Verzeichnis für ein neues Docker-Projekt an. In diesem Verzeichnis: Create app.py (Text-Datei) with the following content:
+
+```bash
+from flask import Flask, render_template
+import requests
+
+app = Flask(__name__)
+
+@app.route('/')
+def home():
+    response = requests.get('http://<IP-ADDRESS OF OWN MACHINE OR ubuntu22-001.lehre.hwr-berlin.de>:8080/greeting')
+    todo = response.json()
+    return render_template('index.html', todo=todo)
+
+if __name__ == '__main__':
+    app.run(debug=True, host='0.0.0.0')
+```
+
+This code defines a Flask application with a single route that consumes the REST API at *IP-Adresse:Port-Nummer* and passes the returned JSON object to an HTML template called index.html.
+
+This is the content of templates/index.html (Text-Datei in Unterverzeichnis templates):
+
+```bash
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Flask Frontend</title>
+</head>
+<body>
+    <h1>Todo</h1>
+    <p>ID: {{ todo['id'] }}</p>
+    <p>Content: {{ todo['content'] }}</p>
+</body>
+</html>
+```
+
+And this is the content of the Dockerfile (Text-Datei):
+    
+```bash
+FROM python:3.8-slim-buster
+
+WORKDIR /app
+
+COPY requirements.txt .
+
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . .
+
+EXPOSE 5000
+
+CMD ["python", "app.py"]
+```
+
+Ahhh, wait, requirements.txt (Text-Datei, for Python to work) is missing:
+
+```bash
+Flask==2.0.2
+requests==2.26.0
+```
+
+This can built like before ...
+
+```bash
+docker build -t flask-frontend .
+```
+
+Deploy ...
+```bash
+docker run -d -p 5000:5000 flask-frontend
+```
+
+Now open localhost:5000 (or any other host on which you have deployed).
