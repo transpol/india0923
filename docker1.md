@@ -115,7 +115,6 @@ To log out of the container, enter
 ```bash
 exit
 ```
-*todo* Maybe add here something about linking the outside world ...
 
 Now again the container is stopped.
 
@@ -426,12 +425,12 @@ requests==2.26.0
 This can built like before ...
 
 ```bash
-docker build -t flask-frontend .
+docker build -t sit-frontend .
 ```
 
 Deploy ...
 ```bash
-docker run -d -p 5000:5000 flask-frontend
+docker run -d -p 5000:5000 sit-frontend
 ```
 
 Now open localhost:5000 (or any other host on which you have deployed).
